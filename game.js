@@ -6,9 +6,9 @@ let game = {
     gold: 0, wave: 1, hp: 100, maxHp: 100,
     enemies: [], arrows: [],
     heroes: [
-        { name: "Gelo", lv: 1, color: "#3498db", type: "slow" },
-        { name: "Fogo", lv: 1, color: "#e67e22", type: "aoe" },
-        { name: "Veneno", lv: 1, color: "#2ecc71", type: "dot" }
+        { name: "Gelo", lv: 1, color: "#3498db", type: "slow", emoji: "🧙‍♂️" },
+        { name: "Fogo", lv: 1, color: "#e67e22", type: "aoe", emoji: "🏹" },
+        { name: "Veneno", lv: 1, color: "#2ecc71", type: "dot", emoji: "🧝" }
     ]
 };
 
@@ -16,25 +16,29 @@ function spawnWave() {
     let count = 5 + (game.wave * 2);
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
+            // Define se é um boss a cada 10 ondas
+            let isBoss = game.wave % 10 === 0 && i === count - 1;
             game.enemies.push({
                 x: canvas.width + (Math.random() * 50),
                 y: 315,
-                hp: 20 + (game.wave * 10),
-                maxHp: 20 + (game.wave * 10),
-                speed: 0.8 + (game.wave * 0.02),
+                hp: isBoss ? (50 + game.wave * 30) : (20 + game.wave * 10),
+                maxHp: isBoss ? (50 + game.wave * 30) : (20 + game.wave * 10),
+                speed: isBoss ? 0.5 : (0.8 + game.wave * 0.02),
                 status: "normal",
-                reward: 10 + game.wave
+                reward: isBoss ? (100 * game.wave) : (10 + game.wave),
+                emoji: isBoss ? "🐲" : "👾"
             });
         }, i * 800);
     }
 }
 
+// Ataque Automático
 setInterval(() => {
     if (game.enemies.length > 0) {
         game.heroes.forEach((h, i) => {
             game.arrows.push({
                 x: 130, y: 170 + (i * 40),
-                dmg: 5 + (h.lv * 2),
+                dmg: 5 + (h.lv * 3),
                 type: h.type,
                 color: h.color
             });
@@ -47,6 +51,7 @@ function update() {
         let currentSpeed = en.status === "slow" ? en.speed * 0.4 : en.speed;
         if (en.x > 140) en.x -= currentSpeed;
         else { game.hp -= 0.05; }
+        
         if (en.hp <= 0) {
             game.gold += en.reward;
             game.enemies.splice(i, 1);
@@ -54,7 +59,7 @@ function update() {
     });
 
     game.arrows.forEach((ar, i) => {
-        ar.x += 7;
+        ar.x += 8;
         if (ar.x > canvas.width) game.arrows.splice(i, 1);
         game.enemies.forEach(en => {
             if (ar.x > en.x && ar.x < en.x + 30) {
@@ -77,22 +82,34 @@ function update() {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Chão e Castelo
     ctx.fillStyle = "#27ae60"; ctx.fillRect(0, 340, canvas.width, 60);
     ctx.fillStyle = "#7f8c8d"; ctx.fillRect(80, 150, 60, 190);
     
+    // Desenhar Heróis (Personagens)
     game.heroes.forEach((h, i) => {
-        ctx.fillStyle = h.color; ctx.fillRect(95, 165 + (i * 40), 25, 25);
+        ctx.font = "25px Arial";
+        ctx.fillText(h.emoji, 95, 185 + (i * 40));
     });
 
+    // Desenhar Inimigos (Monstros)
     game.enemies.forEach(en => {
-        ctx.fillStyle = en.status === "slow" ? "#87ceeb" : "#c0392b";
-        ctx.fillRect(en.x, en.y, 25, 25);
-        ctx.fillStyle = "black"; ctx.fillRect(en.x, en.y - 10, 25, 5);
-        ctx.fillStyle = "green"; ctx.fillRect(en.x, en.y - 10, (en.hp/en.maxHp)*25, 5);
+        ctx.font = en.emoji === "🐲" ? "45px Arial" : "25px Arial";
+        let displayEmoji = en.status === "slow" ? "🧊" : en.emoji;
+        ctx.fillText(displayEmoji, en.x, en.y + 20);
+        
+        // Barra de Vida
+        ctx.fillStyle = "black"; ctx.fillRect(en.x, en.y - 15, 30, 5);
+        ctx.fillStyle = "green"; ctx.fillRect(en.x, en.y - 15, (en.hp/en.maxHp)*30, 5);
     });
 
+    // Desenhar Magias/Flechas
     game.arrows.forEach(ar => {
-        ctx.fillStyle = ar.color; ctx.fillRect(ar.x, ar.y, 12, 4);
+        ctx.fillStyle = ar.color;
+        ctx.beginPath();
+        ctx.arc(ar.x, ar.y, 5, 0, Math.PI * 2);
+        ctx.fill();
     });
 
     update();
@@ -104,6 +121,8 @@ window.upgradeHero = (idx) => {
     if (game.gold >= cost) {
         game.gold -= cost;
         game.heroes[idx].lv++;
+    } else {
+        alert("Ouro insuficiente!");
     }
 };
 
