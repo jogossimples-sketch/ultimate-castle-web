@@ -1,16 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow Castle Clone Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
     <div id="game-container">
+        <!-- Painel de Informações Superior -->
         <div class="hud">
             <div id="gold">💰 0</div>
             <div id="wave">Wave 1</div>
         </div>
-        <div class="hp-bar-main"><div id="hp-inner"></div></div>
+
+        <!-- Barra de Vida do Castelo -->
+        <div class="hp-bar-main">
+            <div id="hp-inner"></div>
+        </div>
+
+        <!-- O Jogo (Canvas) -->
         <canvas id="gameCanvas"></canvas>
+
+        <!-- Botões de Melhoria Inferiores -->
         <div class="controls">
-            <button onclick="upgradeHero(0)">UP Mago</button>
-            <button onclick="upgradeHero(1)">UP Arqueiro</button>
-            <button onclick="upgradeHero(2)">UP Guerreiro</button>
+            <button onclick="upgradeCastle()" style="background: #747d8c; color: white;">🏰 Up Castelo</button>
+            <button onclick="upgradeHero(0)">🧙‍♂️ Up Mago</button>
+            <button onclick="upgradeHero(1)">🏹 Up Arqueiro</button>
+            <button onclick="upgradeHero(2)">⚔️ Up Guerreiro</button>
         </div>
     </div>
+
+    <!-- Carrega a lógica do jogo -->
     <script src="game.js"></script>
 </body>
+                </html>
+                                                          
