@@ -1,146 +1,127 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+canvas.width = 800; canvas.height = 400;
 
-// Ajuste de tamanho
-canvas.width = 800;
-canvas.height = 400;
-
-// Estado do Jogo
-let gameState = {
-    gold: 0,
-    wave: 1,
-    castleHP: 100,
-    maxHP: 100,
-    archers: 1,
-    enemies: [],
-    arrows: []
+// Configurações Estilo Grow Castle
+let game = {
+    gold: 0, wave: 1, hp: 100, maxHp: 100,
+    enemies: [], arrows: [], powers: [],
+    castleLevel: 1,
+    heroes: [
+        { name: "Gelo", lv: 1, color: "#3498db", type: "slow", cooldown: 0 },
+        { name: "Fogo", lv: 1, color: "#e67e22", type: "aoe", cooldown: 0 },
+        { name: "Veneno", lv: 1, color: "#2ecc71", type: "dot", cooldown: 0 }
+    ]
 };
 
-// Configurações do Castelo e Inimigos
-const castlePos = { x: 80, y: 150, w: 80, h: 200 };
-
 function spawnWave() {
-    for (let i = 0; i < gameState.wave * 3; i++) {
+    let count = 5 + (game.wave * 2);
+    for (let i = 0; i < count; i++) {
         setTimeout(() => {
-            gameState.enemies.push({
-                x: canvas.width + (Math.random() * 200),
-                y: 320,
-                hp: 10 + (gameState.wave * 5),
-                speed: 1 + (Math.random() * 0.5),
-                reward: 10
+            game.enemies.push({
+                x: canvas.width + (Math.random() * 100),
+                y: 310,
+                hp: 20 + (game.wave * 12),
+                maxHp: 20 + (game.wave * 12),
+                speed: 0.8 + (game.wave * 0.05),
+                status: "normal",
+                reward: 15 + game.wave
             });
-        }, i * 800);
+        }, i * 600);
     }
 }
 
-function shoot() {
-    if (gameState.enemies.length > 0) {
-        for (let i = 0; i < gameState.archers; i++) {
-            setTimeout(() => {
-                gameState.arrows.push({
-                    x: castlePos.x + 40,
-                    y: castlePos.y + 30,
-                    vx: 7,
-                    vy: (Math.random() - 0.5) * 2
-                });
-            }, i * 200);
+// Ataque Automático dos Heróis
+setInterval(() => {
+    game.heroes.forEach(h => {
+        if (game.enemies.length > 0) {
+            let target = game.enemies[0];
+            game.arrows.push({
+                x: 120, y: 180 + (game.heroes.indexOf(h) * 20),
+                tx: target.x, ty: target.y,
+                dmg: 5 + (h.lv * 3),
+                type: h.type,
+                color: h.color
+            });
         }
-    }
-}
-
-// Loop de tiro automático
-setInterval(shoot, 1500);
+    });
+}, 1200);
 
 function update() {
-    // Atualizar Inimigos
-    gameState.enemies.forEach((enemy, index) => {
-        if (enemy.x > castlePos.x + castlePos.w) {
-            enemy.x -= enemy.speed;
-        } else {
-            gameState.castleHP -= 0.05; // Dano contínuo ao encostar
+    // Lógica de Inimigos
+    game.enemies.forEach((en, i) => {
+        let currentSpeed = en.status === "slow" ? en.speed * 0.5 : en.speed;
+        if (en.x > 140) en.x -= currentSpeed;
+        else { game.hp -= 0.1; } // Dano ao castelo
+
+        if (en.hp <= 0) {
+            game.gold += en.reward;
+            game.enemies.splice(i, 1);
         }
     });
 
-    // Atualizar Flechas
-    gameState.arrows.forEach((arrow, aIdx) => {
-        arrow.x += arrow.vx;
-        arrow.y += arrow.vy;
-
-        // Colisão simples
-        gameState.enemies.forEach((enemy, eIdx) => {
-            if (arrow.x > enemy.x && arrow.x < enemy.x + 30 && arrow.y > enemy.y - 30) {
-                enemy.hp -= 10;
-                gameState.arrows.splice(aIdx, 1);
-                if (enemy.hp <= 0) {
-                    gameState.gold += enemy.reward;
-                    gameState.enemies.splice(eIdx, 1);
-                }
+    // Lógica de Projéteis
+    game.arrows.forEach((ar, i) => {
+        ar.x += 8;
+        game.enemies.forEach(en => {
+            if (ar.x > en.x && ar.x < en.x + 30) {
+                en.hp -= ar.dmg;
+                if (ar.type === "slow") en.status = "slow";
+                game.arrows.splice(i, 1);
             }
         });
     });
 
-    // Próxima Onda
-    if (gameState.enemies.length === 0) {
-        gameState.wave++;
-        spawnWave();
-    }
-
-    // UI
-    document.getElementById('gold').innerText = Math.floor(gameState.gold);
-    document.getElementById('hp').innerText = Math.max(0, Math.floor(gameState.castleHP));
-    document.getElementById('wave').innerText = gameState.wave;
-
-    if (gameState.castleHP <= 0) {
-        alert("Castelo Destruído! Recarregue a página.");
-        window.location.reload();
-    }
+    if (game.enemies.length === 0) { game.wave++; spawnWave(); }
+    
+    // Atualizar UI
+    document.getElementById('gold').innerText = Math.floor(game.gold);
+    document.getElementById('hp').innerText = Math.floor(game.hp);
+    document.getElementById('wave').innerText = game.wave;
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Chão
-    ctx.fillStyle = '#27ae60';
-    ctx.fillRect(0, 340, canvas.width, 60);
-
-    // Castelo
-    ctx.fillStyle = '#7f8c8d';
-    ctx.fillRect(castlePos.x, castlePos.y, castlePos.w, castlePos.h);
     
-    // Arqueiros (representados por pontos azuis no topo)
-    ctx.fillStyle = '#3498db';
-    for(let i=0; i<gameState.archers; i++) {
-        ctx.fillRect(castlePos.x + 10 + (i*10 % 60), castlePos.y + 10, 8, 8);
-    }
+    // Chão e Castelo
+    ctx.fillStyle = "#27ae60"; ctx.fillRect(0, 340, canvas.width, 60);
+    ctx.fillStyle = "#7f8c8d"; ctx.fillRect(80, 150, 60, 190);
+    
+    // Desenhar Heróis no Castelo
+    game.heroes.forEach((h, i) => {
+        ctx.fillStyle = h.color;
+        ctx.fillRect(90, 160 + (i * 40), 20, 20);
+        ctx.fillStyle = "white"; ctx.font = "10px Arial";
+        ctx.fillText("Lv."+h.lv, 90, 155 + (i * 40));
+    });
 
-    // Inimigos
-    ctx.fillStyle = '#c0392b';
-    gameState.enemies.forEach(e => ctx.fillRect(e.x, e.y, 25, 25));
+    // Inimigos com Barra de Vida
+    game.enemies.forEach(en => {
+        ctx.fillStyle = en.status === "slow" ? "#87ceeb" : "#c0392b";
+        ctx.fillRect(en.x, en.y, 25, 25);
+        ctx.fillStyle = "black"; ctx.fillRect(en.x, en.y - 10, 25, 5);
+        ctx.fillStyle = "green"; ctx.fillRect(en.x, en.y - 10, (en.hp/en.maxHp)*25, 5);
+    });
 
-    // Flechas
-    ctx.fillStyle = '#f1c40f';
-    gameState.arrows.forEach(a => ctx.fillRect(a.x, a.y, 8, 3));
+    // Projéteis
+    game.arrows.forEach(ar => {
+        ctx.fillStyle = ar.color; ctx.fillRect(ar.x, ar.y, 10, 4);
+    });
 
     update();
     requestAnimationFrame(draw);
 }
 
-// Funções de Upgrade
-window.upgradeCastle = () => {
-    if (gameState.gold >= 50) {
-        gameState.gold -= 50;
-        gameState.maxHP += 50;
-        gameState.castleHP = gameState.maxHP;
-    }
-};
-
-window.addArcher = () => {
-    if (gameState.gold >= 100) {
-        gameState.gold -= 100;
-        gameState.archers++;
-    }
+// Funções Globais para os Botões
+window.upgradeHero = (index) => {
+    let cost = 100 * game.heroes[index].lv;
+    if (game.gold >= cost) {
+        game.gold -= cost;
+        game.heroes[index].lv++;
+        alert(game.heroes[index].name + " subiu para o nível " + game.heroes[index].lv);
+    } else { alert("Ouro insuficiente! Custa: " + cost); }
 };
 
 spawnWave();
 draw();
-                          
+                    
