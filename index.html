@@ -1,25 +1,16 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grow Castle Clone</title>
-    <link rel="stylesheet" href="style.css">
-</head>
 <body>
     <div id="game-container">
         <div class="hud">
-            <div>Ouro: <span id="gold">0</span></div>
-            <div>Onda: <span id="wave">1</span></div>
-            <div>Vida: <span id="hp">100</span></div>
+            <div id="gold">💰 0</div>
+            <div id="wave">Wave 1</div>
         </div>
+        <div class="hp-bar-main"><div id="hp-inner"></div></div>
         <canvas id="gameCanvas"></canvas>
         <div class="controls">
-            <button onclick="upgradeHero(0)">Gelo (100+)</button>
-            <button onclick="upgradeHero(1)">Fogo (100+)</button>
-            <button onclick="upgradeHero(2)">Veneno (100+)</button>
+            <button onclick="upgradeHero(0)">UP Mago</button>
+            <button onclick="upgradeHero(1)">UP Arqueiro</button>
+            <button onclick="upgradeHero(2)">UP Guerreiro</button>
         </div>
     </div>
     <script src="game.js"></script>
 </body>
-</html>
